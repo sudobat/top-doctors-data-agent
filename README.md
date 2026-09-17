@@ -16,6 +16,22 @@ This starter provides you with a general-purpose Mastra agent that can research 
 
 ## Get started
 
+## Local clinic database
+
+Postgres runs in Docker. First start creates schema and seed data automatically.
+
+```shell
+npm run db:up
+```
+
+To wipe and reload simulated clinic data (doctors, specialties, patients, rooms, visits, invoices):
+
+```shell
+npm run db:seed
+```
+
+Connection defaults: `postgres://clinic:clinic@localhost:5434/clinic` (host port **5434** so it does not clash with a local Postgres on 5432/5433).
+
 Set your `OPENAI_API_KEY` in `.env` or in your environment, then run:
 
 ```shell

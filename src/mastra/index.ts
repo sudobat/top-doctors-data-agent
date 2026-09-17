@@ -10,6 +10,7 @@ import {
 } from '@mastra/observability';
 import { agent } from './agents/agent';
 import { dataEngineerAgent } from './agents/data-engineer-agent';
+import { describeColumnsTool, listTablesTool, runSqlTool } from './tools/postgres-tools';
 import { startScheduleTool, stopScheduleTool } from './tools/schedule-tools';
 
 export const mastra = new Mastra({
@@ -17,7 +18,13 @@ export const mastra = new Mastra({
     externals: ['@duckdb/node-bindings'],
   },
   agents: { agent, dataEngineerAgent },
-  tools: { startScheduleTool, stopScheduleTool },
+  tools: {
+    startScheduleTool,
+    stopScheduleTool,
+    runSqlTool,
+    listTablesTool,
+    describeColumnsTool,
+  },
   storage: new MastraCompositeStore({
     id: 'composite-storage',
     default: new LibSQLStore({

@@ -7,7 +7,10 @@
   "scripts": {
     "dev": "mastra dev",
     "build": "mastra build",
-    "start": "mastra start"
+    "start": "mastra start",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:seed": "node scripts/seed-db.mjs"
   },
   "keywords": [],
   "author": "",
@@ -22,10 +25,12 @@
     "@mastra/libsql": "1.23.0",
     "@mastra/memory": "1.30.0",
     "@mastra/observability": "1.17.8",
+    "pg": "^8.23.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "latest",
+    "@types/pg": "^8.23.1",
     "mastra": "1.30.0",
     "typescript": "^6.0.3"
   }
