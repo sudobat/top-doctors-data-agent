@@ -41,6 +41,14 @@ To wipe and reload the medallion schema and seed:
 npm run db:seed
 ```
 
+To reload with intentional pipeline-error scenarios (duplicate Cardiology loads + missing Neurology after a failed silver transform), for diagnosis practice:
+
+```shell
+npm run db:seed:broken
+```
+
+Restore the healthy snapshot anytime with `npm run db:seed`.
+
 Connection defaults: `postgres://clinic:clinic@localhost:5434/clinic` (host port **5434** so it does not clash with a local Postgres on 5432/5433).
 
 Set your `OPENAI_API_KEY` in `.env` or in your environment, then run:

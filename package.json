@@ -10,7 +10,8 @@
     "start": "mastra start",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
-    "db:seed": "node scripts/seed-db.mjs"
+    "db:seed": "node scripts/seed-db.mjs",
+    "db:seed:broken": "node scripts/seed-db.mjs --broken"
   },
   "keywords": [],
   "author": "",

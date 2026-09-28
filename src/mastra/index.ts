@@ -10,6 +10,7 @@ import {
 } from '@mastra/observability';
 import { agent } from './agents/agent';
 import { dataEngineerAgent } from './agents/data-engineer-agent';
+import { outlierAnalysisAgent } from './agents/outlier-analysis-agent';
 import { describeColumnsTool, listTablesTool, runSqlTool } from './tools/postgres-tools';
 import { startScheduleTool, stopScheduleTool } from './tools/schedule-tools';
 
@@ -17,7 +18,7 @@ export const mastra = new Mastra({
   bundler: {
     externals: ['@duckdb/node-bindings'],
   },
-  agents: { agent, dataEngineerAgent },
+  agents: { agent, dataEngineerAgent, outlierAnalysisAgent },
   tools: {
     startScheduleTool,
     stopScheduleTool,

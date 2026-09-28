@@ -25,6 +25,7 @@ export const dataEngineerAgent = new Agent({
       'List the medallion tables and summarize what each layer contains.',
       'Compare bronze_doctors across the last two executions.',
       'Query gold_revenue_by_specialty for paid vs outstanding amounts.',
+      'Cardiology looks high and Neurology looks low in gold — check ops and bronze vs silver.',
     ],
   },
   instructions: `You are a data engineer assistant with live, read-only access to the clinic PostgreSQL warehouse.
