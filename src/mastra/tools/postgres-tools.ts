@@ -57,7 +57,8 @@ export const runSqlTool = createTool({
 
 export const listTablesTool = createTool({
   id: 'list_tables',
-  description: 'List base tables in the public schema of the clinic PostgreSQL database.',
+  description:
+    'List base tables in the public schema of the clinic medallion PostgreSQL warehouse (raw_/copper_/bronze_/silver_/gold_/ops_ prefixes).',
   inputSchema: z.object({}),
   execute: async () => {
     return queryPostgres(`

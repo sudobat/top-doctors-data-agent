@@ -20,11 +20,22 @@ This starter provides you with a general-purpose Mastra agent that can research 
 
 Postgres runs in Docker. First start creates schema and seed data automatically.
 
+The database emulates a medallion warehouse in the `public` schema via table prefixes:
+
+| Prefix | Role |
+| --- | --- |
+| `raw_*` | Airbyte-style JSON landing by source (`dynamics`, `ehr`, `billing`) |
+| `copper_*` | Typed cleaned tables (latest batch) |
+| `bronze_*` | Last 2 transform executions |
+| `silver_*` | Current-state clinic entities |
+| `gold_*` | Analytics marts + wide reporting tables |
+| `ops_*` | Airbyte / Airflow / dbt run state |
+
 ```shell
 npm run db:up
 ```
 
-To wipe and reload simulated clinic data (doctors, specialties, patients, rooms, visits, invoices):
+To wipe and reload the medallion schema and seed:
 
 ```shell
 npm run db:seed

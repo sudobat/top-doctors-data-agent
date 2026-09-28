@@ -1,7 +1,12 @@
 import { Agent } from '@mastra/core/agent';
+import { ModelRouterEmbeddingModel } from '@mastra/core/llm';
+import { LibSQLVector } from '@mastra/libsql';
 import { Memory } from '@mastra/memory';
 import { z } from 'zod';
 import { describeColumnsTool, listTablesTool, runSqlTool } from '../tools/postgres-tools';
+
+const memoryDatabaseUrl = process.env.TURSO_DATABASE_URL || 'file:./mastra.db';
+const memoryAuthToken = process.env.TURSO_AUTH_TOKEN || undefined;
 
 const userWorkingMemorySchema = z.object({
   role: z
@@ -13,18 +18,31 @@ const userWorkingMemorySchema = z.object({
 export const dataEngineerAgent = new Agent({
   id: 'data-engineer-agent',
   name: 'Data Engineer Agent',
-  description: 'A data engineer assistant that queries the clinic PostgreSQL database.',
+  description:
+    'A data engineer assistant that queries the clinic medallion PostgreSQL warehouse (raw → copper → bronze → silver → gold).',
   metadata: {
     suggestedPrompts: [
-      'Run a query to count the doctors per specialty.',
-      'Query the appointments table for last month.',
+      'List the medallion tables and summarize what each layer contains.',
+      'Compare bronze_doctors across the last two executions.',
+      'Query gold_revenue_by_specialty for paid vs outstanding amounts.',
     ],
   },
-  instructions: `You are a data engineer assistant with live, read-only access to the clinic PostgreSQL database.
+  instructions: `You are a data engineer assistant with live, read-only access to the clinic PostgreSQL warehouse.
 
-Use list_tables and describe_columns to learn the public schema before writing SQL. Use run_sql for SELECT (and WITH/TABLE/VALUES/EXPLAIN) queries only. Do not invent tables, columns, or result rows.
+The public schema uses a medallion layout with table-name prefixes (not separate schemas):
+
+- raw_*: Airbyte-style landing. JSON payload in _airbyte_data plus control fields (_airbyte_raw_id, _airbyte_extracted_at, _airbyte_meta, _airbyte_generation_id). Feeds are source-named: raw_dynamics_* (doctors, specialties, doctor_specialties), raw_ehr_* (patients, rooms, visits), raw_billing_* (invoices).
+- copper_*: Typed cleaned tables from the latest transform batch.
+- bronze_*: Same entities retaining exactly the last two pipeline executions (_execution_id). Older batches are pruned.
+- silver_*: Current-state typed tables for analytics joins (one row per business key).
+- gold_*: Query-oriented marts (gold_doctor_workload, gold_patient_visit_summary, gold_revenue_by_specialty) and wide reporting tables (gold_visits_mart, gold_invoices_mart).
+- ops_*: Pipeline control/state — Airbyte connections/syncs/stream states, Airflow dag runs/task instances, dbt invocations/run results, and ops_transform_batches linking execution batches across tools.
+
+Prefer silver_/gold_ for business questions, bronze_ to inspect execution diffs, raw_ for ingestion payloads/control fields, and ops_ for job history. Use list_tables and describe_columns before writing SQL. Use run_sql for SELECT (and WITH/TABLE/VALUES/EXPLAIN) only. Do not invent tables, columns, or result rows.
 
 When you run a query, present the SQL you used and the real result. If a tool fails, report the error and fix the query. If the user asks for something other than querying data, answer as a data engineer would.
+
+Semantic recall can surface earlier queries and answers from this user's other threads. Treat those as past conversation, not live warehouse data. Re-run SQL when the user needs current numbers.
 
 Working memory stores the user's Role. If it is unknown, ask once and save it.
 
@@ -34,6 +52,12 @@ For a non-technical role, include at least one emoji in every response and expla
 `,
   model: 'openai/gpt-5.6-terra',
   memory: new Memory({
+    vector: new LibSQLVector({
+      id: 'data-engineer-vector',
+      url: memoryDatabaseUrl,
+      authToken: memoryAuthToken,
+    }),
+    embedder: new ModelRouterEmbeddingModel('openai/text-embedding-3-small'),
     options: {
       generateTitle: true,
       lastMessages: 20,
@@ -43,6 +67,11 @@ For a non-technical role, include at least one emoji in every response and expla
       workingMemory: {
         enabled: true,
         schema: userWorkingMemorySchema,
+      },
+      semanticRecall: {
+        topK: 5,
+        messageRange: 2,
+        scope: 'resource',
       },
     },
   }),
