@@ -1,6 +1,7 @@
 import { createWorkflow } from '@mastra/core/workflows';
 import { z } from 'zod';
 import { outlierAnalysisAgent } from '../agents/outlier-analysis-agent';
+import { postToTeamsWebhookStep } from './steps/post-to-teams-webhook';
 
 export const DAILY_OUTLIER_ANALYSIS_PROMPT = `Run the morning outlier sweep across the clinic warehouse.
 
@@ -14,7 +15,7 @@ Structure the answer as Scope, Outliers found, Root causes, and Confidence & cav
 export const dailyOutlierAnalysisWorkflow = createWorkflow({
   id: 'daily-outlier-analysis',
   description:
-    'Runs the Outlier Analysis Agent every morning to detect warehouse outliers and trace root causes.',
+    'Runs the Outlier Analysis Agent every morning to detect warehouse outliers, then posts the report to Teams.',
   inputSchema: z.object({
     prompt: z
       .string()
@@ -23,6 +24,7 @@ export const dailyOutlierAnalysisWorkflow = createWorkflow({
   }),
   outputSchema: z.object({
     text: z.string(),
+    teamsPosted: z.boolean(),
   }),
   schedule: {
     cron: '0 9 * * *',
@@ -39,4 +41,5 @@ export const dailyOutlierAnalysisWorkflow = createWorkflow({
       resource: 'scheduled-outlier-analysis',
     },
   })
+  .then(postToTeamsWebhookStep)
   .commit();
