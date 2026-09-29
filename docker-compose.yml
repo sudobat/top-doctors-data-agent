@@ -1,3 +1,6 @@
+include:
+  - path: docker-compose.openmetadata.yml
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -18,5 +21,46 @@ services:
       timeout: 5s
       retries: 12
 
+  metabase-db:
+    profiles: ["semantic"]
+    image: postgres:16-alpine
+    container_name: top-doctors-metabase-db
+    environment:
+      POSTGRES_USER: ${METABASE_DB_USER:-metabase}
+      POSTGRES_PASSWORD: ${METABASE_DB_PASSWORD:-metabase}
+      POSTGRES_DB: ${METABASE_DB_NAME:-metabase}
+    volumes:
+      - metabase_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  metabase:
+    profiles: ["semantic"]
+    image: metabase/metabase:v0.55.2
+    container_name: top-doctors-metabase
+    depends_on:
+      metabase-db:
+        condition: service_healthy
+    ports:
+      - "${METABASE_PORT:-3000}:3000"
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: ${METABASE_DB_NAME:-metabase}
+      MB_DB_PORT: 5432
+      MB_DB_USER: ${METABASE_DB_USER:-metabase}
+      MB_DB_PASS: ${METABASE_DB_PASSWORD:-metabase}
+      MB_DB_HOST: metabase-db
+      JAVA_TIMEZONE: ${METABASE_TIMEZONE:-Europe/Madrid}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+
 volumes:
   postgres_data:
+  metabase_db_data:

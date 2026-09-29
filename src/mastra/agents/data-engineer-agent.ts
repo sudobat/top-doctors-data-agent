@@ -3,7 +3,20 @@ import { ModelRouterEmbeddingModel } from '@mastra/core/llm';
 import { LibSQLVector } from '@mastra/libsql';
 import { Memory } from '@mastra/memory';
 import { z } from 'zod';
-import { describeColumnsTool, listTablesTool, runSqlTool } from '../tools/postgres-tools';
+import {
+  bqDescribeColumnsTool,
+  bqListDatasetsTool,
+  bqListTablesTool,
+  bqRunSqlTool,
+} from '../tools/bigquery-tools';
+import {
+  omDescribeCertifiedTableTool,
+  omGetGlossaryTermTool,
+  omGetMetricTool,
+  omListCertifiedAssetsTool,
+  omSearchGlossaryTool,
+  omSearchMetricsTool,
+} from '../tools/openmetadata-tools';
 
 const memoryDatabaseUrl = process.env.TURSO_DATABASE_URL || 'file:./mastra.db';
 const memoryAuthToken = process.env.TURSO_AUTH_TOKEN || undefined;
@@ -19,7 +32,7 @@ export const dataEngineerAgent = new Agent({
   id: 'data-engineer-agent',
   name: 'Data Engineer Agent',
   description:
-    'A data engineer assistant that queries the clinic medallion PostgreSQL warehouse (raw → copper → bronze → silver → gold).',
+    'A data engineer assistant that queries the clinic medallion warehouse in BigQuery dataset clinic.',
   metadata: {
     suggestedPrompts: [
       'List the medallion tables and summarize what each layer contains.',
@@ -28,20 +41,26 @@ export const dataEngineerAgent = new Agent({
       'Cardiology looks high and Neurology looks low in gold — check ops and bronze vs silver.',
     ],
   },
-  instructions: `You are a data engineer assistant with live, read-only access to the clinic PostgreSQL warehouse.
+  instructions: `You are a data engineer assistant with live, read-only access to the clinic warehouse in BigQuery dataset clinic (project from GCP_PROJECT_ID, location from BIGQUERY_LOCATION), guided by the Top Doctors semantic layer in OpenMetadata.
 
-The public schema uses a medallion layout with table-name prefixes (not separate schemas):
+Semantic layer rules (mandatory for business questions):
+1. Always look up published OpenMetadata glossary terms and/or metrics first (om_search_glossary, om_search_metrics, om_get_glossary_term, om_get_metric). Only Approved/published definitions are returned — never invent business meanings.
+2. Query only certified models: silver_* and gold_*. bq_run_sql rejects raw_/copper_/bronze_/ops_ references.
+3. OpenMetadata metric formulas are guidance only; execute logic via SQL on certified BigQuery models (implemented in dbt).
+4. Glossary/metrics may exist in English (canonical), Spanish, and Italian — prefer English when translations disagree.
+5. Use om_list_certified_assets / om_describe_certified_table for catalog descriptions; use bq_describe_columns for live warehouse schema.
 
-- raw_*: Airbyte-style landing. JSON payload in _airbyte_data plus control fields (_airbyte_raw_id, _airbyte_extracted_at, _airbyte_meta, _airbyte_generation_id). Feeds are source-named: raw_dynamics_* (doctors, specialties, doctor_specialties), raw_ehr_* (patients, rooms, visits), raw_billing_* (invoices).
+Warehouse layout (context only — do not query non-certified layers for business answers):
+- raw_*: Airbyte-style landing (JSON in _airbyte_data plus control fields).
 - copper_*: Typed cleaned tables from the latest transform batch.
-- bronze_*: Same entities retaining exactly the last two pipeline executions (_execution_id). Older batches are pruned.
-- silver_*: Current-state typed tables for analytics joins (one row per business key).
-- gold_*: Query-oriented marts (gold_doctor_workload, gold_patient_visit_summary, gold_revenue_by_specialty) and wide reporting tables (gold_visits_mart, gold_invoices_mart).
-- ops_*: Pipeline control/state — Airbyte connections/syncs/stream states, Airflow dag runs/task instances, dbt invocations/run results, and ops_transform_batches linking execution batches across tools.
+- bronze_*: Last two pipeline executions (_execution_id).
+- silver_*: Current-state typed tables (certified).
+- gold_*: Analytics marts and wide reporting tables (certified), e.g. gold_doctor_workload, gold_patient_visit_summary, gold_revenue_by_specialty, gold_visits_mart, gold_invoices_mart.
+- ops_*: Pipeline control/state (Airbyte, Airflow, dbt) — outside the semantic layer.
 
-Prefer silver_/gold_ for business questions, bronze_ to inspect execution diffs, raw_ for ingestion payloads/control fields, and ops_ for job history. Use list_tables and describe_columns before writing SQL. Use run_sql for SELECT (and WITH/TABLE/VALUES/EXPLAIN) only. Do not invent tables, columns, or result rows.
+Use bq_list_tables and bq_describe_columns before writing SQL when needed. Use bq_run_sql for one GoogleSQL statement (SELECT, WITH, TABLE, VALUES, or EXPLAIN) only. Unqualified table names resolve to dataset clinic. JSON columns use JSON_VALUE / JSON_QUERY, not Postgres operators. Do not invent tables, columns, or result rows.
 
-When you run a query, present the SQL you used and the real result. If a tool fails, report the error and fix the query. If the user asks for something other than querying data, answer as a data engineer would.
+When you run a query, present the SQL you used and the real result. Cite the OpenMetadata term/metric you used when answering business questions. If a tool fails, report the error and fix the query. If the user asks for something other than querying data, answer as a data engineer would.
 
 Semantic recall can surface earlier queries and answers from this user's other threads. Treat those as past conversation, not live warehouse data. Re-run SQL when the user needs current numbers.
 
@@ -77,8 +96,15 @@ For a non-technical role, include at least one emoji in every response and expla
     },
   }),
   tools: {
-    run_sql: runSqlTool,
-    list_tables: listTablesTool,
-    describe_columns: describeColumnsTool,
+    om_search_glossary: omSearchGlossaryTool,
+    om_get_glossary_term: omGetGlossaryTermTool,
+    om_search_metrics: omSearchMetricsTool,
+    om_get_metric: omGetMetricTool,
+    om_list_certified_assets: omListCertifiedAssetsTool,
+    om_describe_certified_table: omDescribeCertifiedTableTool,
+    bq_list_datasets: bqListDatasetsTool,
+    bq_list_tables: bqListTablesTool,
+    bq_describe_columns: bqDescribeColumnsTool,
+    bq_run_sql: bqRunSqlTool,
   },
 });

@@ -11,6 +11,20 @@ import {
 import { agent } from './agents/agent';
 import { dataEngineerAgent } from './agents/data-engineer-agent';
 import { outlierAnalysisAgent } from './agents/outlier-analysis-agent';
+import {
+  bqDescribeColumnsTool,
+  bqListDatasetsTool,
+  bqListTablesTool,
+  bqRunSqlTool,
+} from './tools/bigquery-tools';
+import {
+  omDescribeCertifiedTableTool,
+  omGetGlossaryTermTool,
+  omGetMetricTool,
+  omListCertifiedAssetsTool,
+  omSearchGlossaryTool,
+  omSearchMetricsTool,
+} from './tools/openmetadata-tools';
 import { describeColumnsTool, listTablesTool, runSqlTool } from './tools/postgres-tools';
 import { startScheduleTool, stopScheduleTool } from './tools/schedule-tools';
 import { dailyOutlierAnalysisWorkflow } from './workflows/daily-outlier-analysis-workflow';
@@ -27,6 +41,16 @@ export const mastra = new Mastra({
     runSqlTool,
     listTablesTool,
     describeColumnsTool,
+    omSearchGlossaryTool,
+    omGetGlossaryTermTool,
+    omSearchMetricsTool,
+    omGetMetricTool,
+    omListCertifiedAssetsTool,
+    omDescribeCertifiedTableTool,
+    bqListDatasetsTool,
+    bqListTablesTool,
+    bqDescribeColumnsTool,
+    bqRunSqlTool,
   },
   storage: new MastraCompositeStore({
     id: 'composite-storage',

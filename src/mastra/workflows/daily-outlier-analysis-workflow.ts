@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { outlierAnalysisAgent } from '../agents/outlier-analysis-agent';
 import { postToTeamsWebhookStep } from './steps/post-to-teams-webhook';
 
-export const DAILY_OUTLIER_ANALYSIS_PROMPT = `Run the morning outlier sweep across the clinic warehouse.
+export const DAILY_OUTLIER_ANALYSIS_PROMPT = `Run the morning outlier sweep across the clinic BigQuery dataset clinic.
 
 1. Scan gold marts for statistical and business outliers: gold_revenue_by_specialty, gold_doctor_workload, gold_patient_visit_summary, gold_invoices_mart, and gold_visits_mart.
 2. For each material outlier (or a clear top-N set), trace root cause upstream through silver_/bronze_ and ops_ as needed.

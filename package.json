@@ -8,10 +8,16 @@
     "dev": "mastra dev",
     "build": "mastra build",
     "start": "mastra start",
+    "test": "OPENAI_API_KEY=${OPENAI_API_KEY:-test-key-for-unit-tests} tsx --test $(find tests -name '*.test.ts' | sort)",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
     "db:seed": "node scripts/seed-db.mjs",
-    "db:seed:broken": "node scripts/seed-db.mjs --broken"
+    "db:seed:broken": "node scripts/seed-db.mjs --broken",
+    "db:seed:bq": "node --env-file=.env scripts/seed-bigquery.mjs",
+    "db:seed:bq:broken": "node --env-file=.env scripts/seed-bigquery.mjs --broken",
+    "semantic:up": "docker compose --profile semantic up -d",
+    "semantic:down": "docker compose --profile semantic down",
+    "semantic:sync-metabase": "node --env-file=.env scripts/sync-metabase-descriptions.mjs"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +27,7 @@
     "node": ">=22.13.0"
   },
   "dependencies": {
+    "@google-cloud/bigquery": "^9.1.0",
     "@mastra/core": "1.67.0",
     "@mastra/duckdb": "1.9.0",
     "@mastra/libsql": "1.23.0",
@@ -33,6 +40,7 @@
     "@types/node": "latest",
     "@types/pg": "^8.23.1",
     "mastra": "1.30.0",
+    "tsx": "^4.23.15",
     "typescript": "^6.0.3"
   }
 }

@@ -2,11 +2,11 @@ import { createStep } from '@mastra/core/workflows';
 import { z } from 'zod';
 
 /** Power Automate Teams webhooks expect Adaptive Cards; keep payload under typical size limits. */
-const MAX_TEAMS_TEXT_CHARS = 25_000;
+export const MAX_TEAMS_TEXT_CHARS = 25_000;
 /** TextBlock content chunks stay readable and under Teams per-block limits. */
-const TEXT_BLOCK_CHUNK_CHARS = 4_000;
+export const TEXT_BLOCK_CHUNK_CHARS = 4_000;
 
-function chunkText(text: string, size: number): string[] {
+export function chunkText(text: string, size: number): string[] {
   if (text.length <= size) return [text];
   const chunks: string[] = [];
   for (let i = 0; i < text.length; i += size) {
@@ -15,8 +15,13 @@ function chunkText(text: string, size: number): string[] {
   return chunks;
 }
 
+export function truncateReportForTeams(text: string): string {
+  if (text.length <= MAX_TEAMS_TEXT_CHARS) return text;
+  return `${text.slice(0, MAX_TEAMS_TEXT_CHARS)}\n\n…(truncated for Teams webhook size limit)`;
+}
+
 /** Payload required by Power Automate "When a Teams webhook request is received". */
-function buildTeamsWebhookPayload(reportText: string) {
+export function buildTeamsWebhookPayload(reportText: string) {
   const body = [
     {
       type: 'TextBlock',
@@ -76,7 +81,7 @@ export const postToTeamsWebhookStep = createStep({
         originalLength: text.length,
         maxChars: MAX_TEAMS_TEXT_CHARS,
       });
-      text = `${text.slice(0, MAX_TEAMS_TEXT_CHARS)}\n\n…(truncated for Teams webhook size limit)`;
+      text = truncateReportForTeams(text);
     }
 
     const payload = buildTeamsWebhookPayload(text);

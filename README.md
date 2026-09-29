@@ -14,7 +14,13 @@ This starter provides you with a general-purpose Mastra agent that can research 
 - Local libSQL storage and DuckDB observability, with optional Turso storage
 - A bundled Mastra skill that helps coding agents use current Mastra APIs
 
-## Get started
+## Specs and tests
+
+Feature contracts live in [`specs/`](specs/). Run unit tests with:
+
+```shell
+npm test
+```
 
 ## Local clinic database
 
@@ -50,6 +56,31 @@ npm run db:seed:broken
 Restore the healthy snapshot anytime with `npm run db:seed`.
 
 Connection defaults: `postgres://clinic:clinic@localhost:5434/clinic` (host port **5434** so it does not clash with a local Postgres on 5432/5433).
+
+## Semantic layer (OpenMetadata + Metabase)
+
+Self-hosted catalog and BI for certified `silver_` / `gold_` models. See [docs/semantic-layer.md](docs/semantic-layer.md).
+
+Images use Docker Hub (`openmetadata/*`) because `docker.getcollate.io` may be unreachable in some networks.
+
+```shell
+npm run semantic:up          # OpenMetadata :8585, Metabase :3000, Airflow :8081
+npm run semantic:sync-metabase
+npm run semantic:down
+```
+
+Requires roughly 8GB free RAM. Copy GCP credentials to `secrets/gcp-sa.json` (or set `GOOGLE_APPLICATION_CREDENTIALS`) before configuring BigQuery ingest in OpenMetadata.
+
+## BigQuery clinic warehouse
+
+The data agents query BigQuery dataset `clinic` (location `EU`). `npm run db:seed:bq` reloads the local Postgres snapshot, then copies every `public` table into that dataset: same table names, column types, nullability, and primary keys. Postgres checks and foreign keys are not enforced in BigQuery.
+
+```shell
+npm run db:seed:bq
+npm run db:seed:bq:broken
+```
+
+Requires `GCP_PROJECT_ID`, `GOOGLE_APPLICATION_CREDENTIALS`, and a service account that can create datasets, replace tables, and load data (`roles/bigquery.dataEditor` plus `roles/bigquery.jobUser`). Set `BIGQUERY_DATASET` and `BIGQUERY_LOCATION` when they differ from `clinic` and `EU`.
 
 Set your `OPENAI_API_KEY` in `.env` or in your environment, then run:
 

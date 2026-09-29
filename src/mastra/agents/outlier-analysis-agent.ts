@@ -3,7 +3,11 @@ import { ModelRouterEmbeddingModel } from '@mastra/core/llm';
 import { LibSQLVector } from '@mastra/libsql';
 import { Memory } from '@mastra/memory';
 import { z } from 'zod';
-import { describeColumnsTool, listTablesTool, runSqlTool } from '../tools/postgres-tools';
+import {
+  bqDescribeColumnsTool,
+  bqListTablesTool,
+  bqRunSqlTool,
+} from '../tools/bigquery-tools';
 
 const memoryDatabaseUrl = process.env.TURSO_DATABASE_URL || 'file:./mastra.db';
 const memoryAuthToken = process.env.TURSO_AUTH_TOKEN || undefined;
@@ -19,7 +23,7 @@ export const outlierAnalysisAgent = new Agent({
   id: 'outlier-analysis-agent',
   name: 'Outlier Analysis Agent',
   description:
-    'Detects statistical and business outliers in the clinic medallion PostgreSQL warehouse and traces their root causes across pipeline layers.',
+    'Detects statistical and business outliers in the clinic BigQuery warehouse and traces their root causes across pipeline layers.',
   metadata: {
     suggestedPrompts: [
       'Find outlier specialties in gold_revenue_by_specialty and explain why.',
@@ -28,7 +32,7 @@ export const outlierAnalysisAgent = new Agent({
       'Is there an invoice amount outlier in gold_invoices_mart, and where did it originate?',
     ],
   },
-  instructions: `You are an outlier detection and root-cause analysis specialist with live, read-only access to the clinic PostgreSQL warehouse.
+  instructions: `You are an outlier detection and root-cause analysis specialist with live, read-only access to the clinic warehouse in BigQuery dataset clinic.
 
 Your job has two phases — always do both unless the user explicitly asks for detection only:
 
@@ -37,7 +41,7 @@ Your job has two phases — always do both unless the user explicitly asks for d
 
 ## Warehouse layout
 
-The public schema uses table-name prefixes (not separate schemas):
+Dataset clinic uses table-name prefixes (not separate datasets):
 
 - raw_*: Airbyte-style landing. JSON payload in _airbyte_data plus control fields (_airbyte_raw_id, _airbyte_extracted_at, _airbyte_meta, _airbyte_generation_id). Feeds are source-named: raw_dynamics_* (doctors, specialties, doctor_specialties), raw_ehr_* (patients, rooms, visits), raw_billing_* (invoices).
 - copper_*: Typed cleaned tables from the latest transform batch.
@@ -49,7 +53,7 @@ The public schema uses table-name prefixes (not separate schemas):
 ## Detection approach
 
 - Prefer silver_/gold_ as the starting surface for business metrics; use bronze_ for execution-to-execution diffs; raw_ for ingestion payload anomalies; ops_ for failed or skewed pipeline runs.
-- Use list_tables and describe_columns before writing SQL. Use run_sql for SELECT (and WITH/TABLE/VALUES/EXPLAIN) only. Do not invent tables, columns, or result rows.
+- Use bq_list_tables and bq_describe_columns before writing SQL. Use bq_run_sql for one GoogleSQL statement (SELECT, WITH, TABLE, VALUES, or EXPLAIN) only. Unqualified table names resolve to dataset clinic. JSON columns use JSON_VALUE / JSON_QUERY, not Postgres operators. Do not invent tables, columns, or result rows.
 - Choose a detection method that fits the data:
   - Distribution: IQR (values below Q1 − 1.5×IQR or above Q3 + 1.5×IQR), z-score / modified z-score when n is large enough, or percentile extremes when distributions are skewed.
   - Change detection: compare the last two bronze _execution_id batches, or period-over-period deltas in gold/silver.
@@ -111,8 +115,8 @@ For a non-technical role, include at least one emoji in every response and expla
     },
   }),
   tools: {
-    run_sql: runSqlTool,
-    list_tables: listTablesTool,
-    describe_columns: describeColumnsTool,
+    bq_list_tables: bqListTablesTool,
+    bq_describe_columns: bqDescribeColumnsTool,
+    bq_run_sql: bqRunSqlTool,
   },
 });
