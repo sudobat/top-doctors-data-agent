@@ -39,7 +39,7 @@ export const bqDescribeColumnsTool = createTool({
 export const bqRunSqlTool = createTool({
   id: 'bq_run_sql',
   description:
-    'Run one read-only GoogleSQL query (SELECT, WITH, TABLE, VALUES, or EXPLAIN) against certified clinic BigQuery models only (silver_/gold_). Unqualified table names resolve to that dataset. raw_/copper_/bronze_/ops_ are rejected. Returns at most 500 rows. Queries are capped by BIGQUERY_MAXIMUM_BYTES_BILLED (default 1 GiB).',
+    'Run one read-only GoogleSQL query (SELECT, WITH, TABLE, VALUES, or EXPLAIN) against the clinic BigQuery dataset. Unqualified table names resolve to that dataset. Any medallion layer (raw_/copper_/bronze_/silver_/gold_/ops_) is allowed. Returns at most 500 rows. Queries are capped by BIGQUERY_MAXIMUM_BYTES_BILLED (default 1 GiB).',
   inputSchema: z.object({
     sql: z.string().describe('A single read-only GoogleSQL statement.'),
     location: z
@@ -50,7 +50,6 @@ export const bqRunSqlTool = createTool({
   execute: async ({ sql, location }) => {
     const safeSql = assertReadOnlySql(sql);
     assertBigQueryReadOnly(safeSql);
-    assertCertifiedSemanticSql(safeSql);
     return queryBigQuery(safeSql, location);
   },
 });
@@ -58,15 +57,5 @@ export const bqRunSqlTool = createTool({
 export function assertBigQueryReadOnly(sql: string): void {
   if (/\b(EXPORT\s+DATA|LOAD\s+DATA)\b/i.test(sql)) {
     throw new Error('Write or DDL SQL is not allowed.');
-  }
-}
-
-/** Semantic layer: agents may only query certified silver_/gold_ models. */
-export function assertCertifiedSemanticSql(sql: string): void {
-  const forbidden = sql.match(/\b(?:raw_|copper_|bronze_|ops_)[A-Za-z0-9_]+/gi);
-  if (forbidden?.length) {
-    throw new Error(
-      `Semantic layer allows only certified silver_/gold_ models. Forbidden reference(s): ${[...new Set(forbidden)].join(', ')}`,
-    );
   }
 }

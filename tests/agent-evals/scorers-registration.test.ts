@@ -4,7 +4,6 @@ import { mastra } from '../../src/mastra/index.js';
 
 const REQUIRED_SCORERS = [
   'required-tools',
-  'sql-readonly-observable',
   'answer-structure',
   'answer-similarity-judge',
 ] as const;

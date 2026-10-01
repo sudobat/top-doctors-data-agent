@@ -20,7 +20,6 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const IN_SCOPE = new Set(['data-engineer-agent', 'outlier-analysis-agent']);
 const DEFAULT_SCORERS = [
   'required-tools',
-  'sql-readonly-observable',
   'answer-structure',
   'answer-similarity-judge',
 ];

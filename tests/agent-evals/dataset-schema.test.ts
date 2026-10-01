@@ -14,7 +14,6 @@ type DatasetItem = {
     answerSummary?: unknown;
     requiredTools?: unknown;
     expectedStructure?: unknown;
-    sqlConstraints?: unknown;
     notes?: unknown;
   };
 };
@@ -93,14 +92,6 @@ describe('agent evals — dataset schema', () => {
               gt.expectedStructure.every((s) => typeof s === 'string'),
             `item ${item.externalId} expectedStructure must be string[]`,
           );
-        }
-        if (gt.sqlConstraints !== undefined) {
-          assert.equal(
-            typeof gt.sqlConstraints,
-            'object',
-            `item ${item.externalId} sqlConstraints must be an object`,
-          );
-          assert.ok(gt.sqlConstraints !== null);
         }
         if (gt.notes !== undefined) {
           assert.equal(typeof gt.notes, 'string', `item ${item.externalId} notes must be a string`);

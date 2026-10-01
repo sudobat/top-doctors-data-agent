@@ -31,7 +31,6 @@ import {
   answerSimilarityJudgeScorer,
   answerStructureScorer,
   requiredToolsScorer,
-  sqlReadonlyObservableScorer,
 } from './scorers/index.js';
 
 export const mastra = new Mastra({
@@ -42,7 +41,6 @@ export const mastra = new Mastra({
   workflows: { dailyOutlierAnalysisWorkflow },
   scorers: {
     'required-tools': requiredToolsScorer,
-    'sql-readonly-observable': sqlReadonlyObservableScorer,
     'answer-structure': answerStructureScorer,
     'answer-similarity-judge': answerSimilarityJudgeScorer,
   },

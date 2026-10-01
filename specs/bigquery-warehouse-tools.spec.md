@@ -20,7 +20,7 @@ targets:
 | `bq_list_datasets` | Lists datasets in the project |
 | `bq_list_tables` | Lists tables; dataset defaults to clinic |
 | `bq_describe_columns` | Flattens nested RECORD fields as `parent.child` |
-| `bq_run_sql` | `assertReadOnlySql` → `assertBigQueryReadOnly` → `assertCertifiedSemanticSql` → query |
+| `bq_run_sql` | `assertReadOnlySql` → `assertBigQueryReadOnly` → query |
 
 - Dataset/table identifiers must match `/^[A-Za-z_][A-Za-z0-9_]{0,1023}$/`
   `[@test] ../tests/bigquery-semantic-sql/assert-bq-guards.test.ts`

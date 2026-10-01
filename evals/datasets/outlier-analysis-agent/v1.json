@@ -2,17 +2,28 @@
   "name": "outlier-analysis-agent-v1",
   "description": "Starter eval cases for outlier-analysis-agent",
   "agentId": "outlier-analysis-agent",
-  "inputSchema": { "type": "string" },
-  "groundTruthSchema": { "type": "object" },
+  "inputSchema": {
+    "type": "string"
+  },
+  "groundTruthSchema": {
+    "type": "object"
+  },
   "items": [
     {
       "externalId": "oa-revenue-specialty-01",
       "input": "Find outlier specialties in gold_revenue_by_specialty and explain why.",
       "groundTruth": {
         "answerSummary": "Detects specialty revenue outliers with a stated method and traces likely root causes upstream",
-        "requiredTools": ["bq_describe_columns", "bq_run_sql"],
-        "expectedStructure": ["Scope", "Outliers found", "Root causes", "Confidence & caveats"],
-        "sqlConstraints": { "readonly": true },
+        "requiredTools": [
+          "bq_describe_columns",
+          "bq_run_sql"
+        ],
+        "expectedStructure": [
+          "Scope",
+          "Outliers found",
+          "Root causes",
+          "Confidence & caveats"
+        ],
         "notes": "State method, thresholds, and n"
       }
     },
@@ -21,9 +32,16 @@
       "input": "Flag anomalous doctor workloads in gold_doctor_workload and trace them to silver/bronze.",
       "groundTruth": {
         "answerSummary": "Flags workload outliers and traces selected doctors into silver_ and bronze_ evidence",
-        "requiredTools": ["bq_list_tables", "bq_run_sql"],
-        "expectedStructure": ["Scope", "Outliers found", "Root causes", "Confidence & caveats"],
-        "sqlConstraints": { "readonly": true },
+        "requiredTools": [
+          "bq_list_tables",
+          "bq_run_sql"
+        ],
+        "expectedStructure": [
+          "Scope",
+          "Outliers found",
+          "Root causes",
+          "Confidence & caveats"
+        ],
         "notes": "Include method and sample size"
       }
     },
@@ -32,9 +50,16 @@
       "input": "Compare the last two bronze executions and call out row-level outliers.",
       "groundTruth": {
         "answerSummary": "Diffs the last two bronze _execution_id batches and lists material row-level changes as outliers",
-        "requiredTools": ["bq_describe_columns", "bq_run_sql"],
-        "expectedStructure": ["Scope", "Outliers found", "Root causes", "Confidence & caveats"],
-        "sqlConstraints": { "readonly": true },
+        "requiredTools": [
+          "bq_describe_columns",
+          "bq_run_sql"
+        ],
+        "expectedStructure": [
+          "Scope",
+          "Outliers found",
+          "Root causes",
+          "Confidence & caveats"
+        ],
         "notes": "Change detection across bronze batches"
       }
     },
@@ -43,9 +68,15 @@
       "input": "Is there an invoice amount outlier in gold_invoices_mart, and where did it originate?",
       "groundTruth": {
         "answerSummary": "Identifies extreme invoice amounts and traces origin through silver/bronze/raw or billing feeds",
-        "requiredTools": ["bq_run_sql"],
-        "expectedStructure": ["Scope", "Outliers found", "Root causes", "Confidence & caveats"],
-        "sqlConstraints": { "readonly": true },
+        "requiredTools": [
+          "bq_run_sql"
+        ],
+        "expectedStructure": [
+          "Scope",
+          "Outliers found",
+          "Root causes",
+          "Confidence & caveats"
+        ],
         "notes": "Prefer a single most-likely cause with SQL evidence"
       }
     },
@@ -54,9 +85,17 @@
       "input": "Detect visit-volume outliers in gold_visits_mart by clinic and explain root causes.",
       "groundTruth": {
         "answerSummary": "Finds clinics with extreme visit volumes and explains upstream causes with confidence caveats",
-        "requiredTools": ["bq_list_tables", "bq_describe_columns", "bq_run_sql"],
-        "expectedStructure": ["Scope", "Outliers found", "Root causes", "Confidence & caveats"],
-        "sqlConstraints": { "readonly": true },
+        "requiredTools": [
+          "bq_list_tables",
+          "bq_describe_columns",
+          "bq_run_sql"
+        ],
+        "expectedStructure": [
+          "Scope",
+          "Outliers found",
+          "Root causes",
+          "Confidence & caveats"
+        ],
         "notes": "Use IQR or z-score when n allows; otherwise rank extremes"
       }
     },
@@ -65,9 +104,15 @@
       "input": "Find specialties with zero or near-zero activity where activity is expected in gold_revenue_by_specialty.",
       "groundTruth": {
         "answerSummary": "Applies a business-rule outlier check for zero/near-zero specialty activity and investigates causes",
-        "requiredTools": ["bq_run_sql"],
-        "expectedStructure": ["Scope", "Outliers found", "Root causes", "Confidence & caveats"],
-        "sqlConstraints": { "readonly": true },
+        "requiredTools": [
+          "bq_run_sql"
+        ],
+        "expectedStructure": [
+          "Scope",
+          "Outliers found",
+          "Root causes",
+          "Confidence & caveats"
+        ],
         "notes": "Business-rule detection; state n and thresholds"
       }
     }

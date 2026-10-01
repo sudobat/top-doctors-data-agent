@@ -66,7 +66,6 @@ Each `vN.json` is the source of truth authored in git. Load scripts upsert into 
         "answerSummary": "Defines the OM metric then returns paid totals from gold_revenue_by_specialty",
         "requiredTools": ["om_search_metrics", "bq_run_sql"],
         "expectedStructure": ["definition", "sql", "results"],
-        "sqlConstraints": { "readonly": true, "certifiedOnly": true },
         "notes": "Prefer EN glossary/metric when ES/IT disagree"
       }
     }
@@ -78,7 +77,7 @@ Each `vN.json` is the source of truth authored in git. Load scripts upsert into 
   `[@test] ../tests/agent-evals/dataset-schema.test.ts`
 - `groundTruth` is an object with at least `answerSummary` and `requiredTools` (string tool ids)
   `[@test] ../tests/agent-evals/dataset-schema.test.ts`
-- Optional `expectedStructure` (heading/section keys), `sqlConstraints`, and free-form `notes` for the LLM judge
+- Optional `expectedStructure` (heading/section keys) and free-form `notes` for the LLM judge
   `[@test] ../tests/agent-evals/dataset-schema.test.ts`
 - Starter datasets contain **5–10** realistic items per agent, drafted from suggested prompts / contracts in the agent specs
   `[@test] ../tests/agent-evals/starter-dataset-size.test.ts`
@@ -89,7 +88,7 @@ Each `vN.json` is the source of truth authored in git. Load scripts upsert into 
 
 | Agent | Typical `requiredTools` | Typical `expectedStructure` / notes |
 | --- | --- | --- |
-| `data-engineer-agent` | OM lookup tools + `bq_run_sql` (and describe/list when needed) | Cite OM term/metric; SQL + real results; certified `silver_`/`gold_` only for business answers |
+| `data-engineer-agent` | OM lookup tools + `bq_run_sql` (and describe/list when needed) | Cite OM term/metric; SQL + real results; prefer certified `silver_`/`gold_` for business answers |
 | `outlier-analysis-agent` | `bq_list_tables` / `bq_describe_columns` / `bq_run_sql` as needed | Sections: Scope / Outliers found / Root causes / Confidence & caveats; method + thresholds + n |
 
 - Data-engineer starter cases require OpenMetadata tool usage where the prompt is a business/metric question
@@ -116,7 +115,6 @@ agentId: data-engineer-agent
 #   - bq_run_sql
 scorers:
   - required-tools
-  - sql-readonly-observable
   - answer-structure
   - answer-similarity-judge
 ```
@@ -144,13 +142,10 @@ Scorers are created with `createScorer` from `@mastra/core/evals` (and/or `@mast
 | Scorer id | Checks |
 | --- | --- |
 | `required-tools` | Every tool id in `groundTruth.requiredTools` appears in the item’s tool-call trajectory / trace |
-| `sql-readonly-observable` | When `bq_run_sql` was called and args are observable, SQL passes read-only rules; for data-engineer business cases with `sqlConstraints.certifiedOnly`, rejects non-certified table prefixes when observable |
 | `answer-structure` | Output contains the sections/keys in `groundTruth.expectedStructure` (outlier four-part headings, or DE definition/sql/results keys) |
 
 - `required-tools` scores 1 when all required tools were called, else 0, with a reason listing missing tools
   `[@test] ../tests/agent-evals/scorers-required-tools.test.ts`
-- `sql-readonly-observable` does not invent SQL; if no SQL call is observable it records a non-pass with an explicit reason (not a silent skip of the item)
-  `[@test] ../tests/agent-evals/scorers-sql-readonly.test.ts`
 - `answer-structure` is case-insensitive on heading labels and tolerates markdown formatting
   `[@test] ../tests/agent-evals/scorers-answer-structure.test.ts`
 
