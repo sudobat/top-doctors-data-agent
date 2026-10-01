@@ -1,43 +1,23 @@
 import { createScorer } from '@mastra/core/evals';
 import { assertCertifiedSemanticSql } from '../tools/bigquery-tools.js';
 import { assertReadOnlySql } from '../tools/sql-readonly.js';
+import { normalizeScorerRun } from './run-shape.js';
 
-type ToolCallLike = {
-  toolName?: string;
-  toolId?: string;
-  name?: string;
-  args?: { sql?: string };
-  input?: { sql?: string };
-};
-
-type SqlReadonlyRun = {
-  toolCalls?: ToolCallLike[];
-  tracing?: { toolCalls?: ToolCallLike[] };
-  groundTruth?: { sqlConstraints?: { certifiedOnly?: boolean } };
-};
-
-function extractObservableSql(run: SqlReadonlyRun): string | undefined {
-  const calls = [...(run.toolCalls ?? []), ...(run.tracing?.toolCalls ?? [])];
-  for (const call of calls) {
-    const name = call.toolName ?? call.toolId ?? call.name;
-    if (name !== 'bq_run_sql') continue;
+function extractObservableSql(run: unknown): string | undefined {
+  const normalized = normalizeScorerRun(run);
+  for (const call of normalized.toolCalls) {
+    if (call.toolName !== 'bq_run_sql') continue;
     const sql = call.args?.sql ?? call.input?.sql;
     if (typeof sql === 'string' && sql.trim()) return sql;
   }
   return undefined;
 }
 
-function validateObservableSql(sql: string, run: SqlReadonlyRun): void {
-  assertReadOnlySql(sql);
-  if (run.groundTruth?.sqlConstraints?.certifiedOnly) {
-    assertCertifiedSemanticSql(sql);
-  }
-}
-
-function evaluateSqlReadonly(run: SqlReadonlyRun): {
+function evaluateSqlReadonly(run: unknown): {
   score: number;
   reason: string;
 } {
+  const normalized = normalizeScorerRun(run);
   const sql = extractObservableSql(run);
   if (!sql) {
     return {
@@ -48,7 +28,13 @@ function evaluateSqlReadonly(run: SqlReadonlyRun): {
   }
 
   try {
-    validateObservableSql(sql, run);
+    assertReadOnlySql(sql);
+    const constraints = normalized.groundTruth?.sqlConstraints as
+      | { certifiedOnly?: boolean }
+      | undefined;
+    if (constraints?.certifiedOnly) {
+      assertCertifiedSemanticSql(sql);
+    }
     return {
       score: 1,
       reason:
@@ -66,8 +52,9 @@ export const sqlReadonlyObservableScorer = createScorer({
   id: 'sql-readonly-observable',
   description:
     'When bq_run_sql args are observable, validates read-only SQL and optional certified-only table prefixes; otherwise non-pass with an explicit reason.',
+  type: 'agent',
 })
-  .generateScore(({ run }) => evaluateSqlReadonly(run as SqlReadonlyRun).score)
-  .generateReason(({ run }) => evaluateSqlReadonly(run as SqlReadonlyRun).reason);
+  .generateScore(({ run }) => evaluateSqlReadonly(run).score)
+  .generateReason(({ run }) => evaluateSqlReadonly(run).reason);
 
 sqlReadonlyObservableScorer.run = sqlReadonlyObservableScorer.run.bind(sqlReadonlyObservableScorer);

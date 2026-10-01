@@ -1,9 +1,5 @@
 import { createScorer } from '@mastra/core/evals';
-
-type AnswerStructureRun = {
-  output?: unknown;
-  groundTruth?: { expectedStructure?: string[] };
-};
+import { normalizeScorerRun } from './run-shape.js';
 
 function normalizeHeading(label: string): string {
   return label
@@ -11,25 +7,6 @@ function normalizeHeading(label: string): string {
     .replace(/[#*_`>~\[\]()]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-}
-
-function extractOutputText(output: unknown): string {
-  if (typeof output === 'string') return output;
-  if (Array.isArray(output)) {
-    return output
-      .map((part) => {
-        if (typeof part === 'string') return part;
-        if (part && typeof part === 'object' && 'content' in part) {
-          return String((part as { content?: unknown }).content ?? '');
-        }
-        return '';
-      })
-      .join('\n');
-  }
-  if (output && typeof output === 'object' && 'text' in (output as object)) {
-    return String((output as { text?: unknown }).text ?? '');
-  }
-  return String(output ?? '');
 }
 
 function findMissingSections(text: string, expected: string[]): string[] {
@@ -40,18 +17,34 @@ function findMissingSections(text: string, expected: string[]): string[] {
   });
 }
 
-function evaluateAnswerStructure(run: AnswerStructureRun): {
+function evaluateAnswerStructure(run: unknown): {
   score: number;
   reason: string;
 } {
-  const expected = run.groundTruth?.expectedStructure ?? [];
+  const normalized = normalizeScorerRun(run);
+  const expected = Array.isArray(normalized.groundTruth?.expectedStructure)
+    ? (normalized.groundTruth.expectedStructure as string[])
+    : [];
+
   if (expected.length === 0) {
     return {
       score: 1,
       reason: `Output contains expected structure sections: (none).`,
     };
   }
-  const missing = findMissingSections(extractOutputText(run.output), expected);
+
+  const text = normalized.outputText;
+  if (!text.trim()) {
+    return {
+      score: 0,
+      reason:
+        'Agent output text is empty; cannot verify expected structure sections: ' +
+        expected.join(', ') +
+        '.',
+    };
+  }
+
+  const missing = findMissingSections(text, expected);
   if (missing.length === 0) {
     return {
       score: 1,
@@ -68,8 +61,9 @@ export const answerStructureScorer = createScorer({
   id: 'answer-structure',
   description:
     'Checks that the agent output contains the section/heading keys in groundTruth.expectedStructure (case-insensitive, markdown-tolerant).',
+  type: 'agent',
 })
-  .generateScore(({ run }) => evaluateAnswerStructure(run as AnswerStructureRun).score)
-  .generateReason(({ run }) => evaluateAnswerStructure(run as AnswerStructureRun).reason);
+  .generateScore(({ run }) => evaluateAnswerStructure(run).score)
+  .generateReason(({ run }) => evaluateAnswerStructure(run).reason);
 
 answerStructureScorer.run = answerStructureScorer.run.bind(answerStructureScorer);

@@ -1,42 +1,15 @@
 import { createScorer } from '@mastra/core/evals';
+import { normalizeScorerRun } from './run-shape.js';
 
-type ToolCallLike =
-  | string
-  | {
-      toolName?: string;
-      toolId?: string;
-      name?: string;
-    };
-
-type RequiredToolsRun = {
-  toolCalls?: ToolCallLike[];
-  tracing?: { toolCalls?: ToolCallLike[] };
-  groundTruth?: { requiredTools?: string[] };
-};
-
-function collectToolIds(run: RequiredToolsRun): string[] {
-  const ids = new Set<string>();
-  const add = (entry: ToolCallLike | undefined) => {
-    if (!entry) return;
-    if (typeof entry === 'string') {
-      ids.add(entry);
-      return;
-    }
-    const id = entry.toolName ?? entry.toolId ?? entry.name;
-    if (typeof id === 'string' && id.length > 0) ids.add(id);
-  };
-
-  for (const entry of run.toolCalls ?? []) add(entry);
-  for (const entry of run.tracing?.toolCalls ?? []) add(entry);
-  return [...ids];
-}
-
-function evaluateRequiredTools(run: RequiredToolsRun): {
+function evaluateRequiredTools(run: unknown): {
   score: number;
   reason: string;
 } {
-  const required = run.groundTruth?.requiredTools ?? [];
-  const called = new Set(collectToolIds(run));
+  const normalized = normalizeScorerRun(run);
+  const required = Array.isArray(normalized.groundTruth?.requiredTools)
+    ? (normalized.groundTruth.requiredTools as string[])
+    : [];
+  const called = new Set(normalized.toolCalls.map((c) => c.toolName));
   const missing = required.filter((id) => !called.has(id));
   if (missing.length === 0) {
     return {
@@ -54,8 +27,9 @@ export const requiredToolsScorer = createScorer({
   id: 'required-tools',
   description:
     'Scores 1 when every groundTruth.requiredTools id appears in the tool-call trajectory; otherwise 0 with missing tools listed.',
+  type: 'agent',
 })
-  .generateScore(({ run }) => evaluateRequiredTools(run as RequiredToolsRun).score)
-  .generateReason(({ run }) => evaluateRequiredTools(run as RequiredToolsRun).reason);
+  .generateScore(({ run }) => evaluateRequiredTools(run).score)
+  .generateReason(({ run }) => evaluateRequiredTools(run).reason);
 
 requiredToolsScorer.run = requiredToolsScorer.run.bind(requiredToolsScorer);
