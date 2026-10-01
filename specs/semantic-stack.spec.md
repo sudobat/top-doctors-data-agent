@@ -11,7 +11,7 @@ targets:
 
 ## Profile
 
-- Services use Compose profile `semantic` so `db:up` does not start them
+- Services use Compose profile `semantic` so a default `docker compose up` (without `semantic`) does not start them
 - `npm run semantic:up` / `semantic:down` toggle the stack (~8GB RAM)
 
 ## Isolation

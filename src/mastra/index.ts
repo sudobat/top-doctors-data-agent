@@ -25,9 +25,14 @@ import {
   omSearchGlossaryTool,
   omSearchMetricsTool,
 } from './tools/openmetadata-tools';
-import { describeColumnsTool, listTablesTool, runSqlTool } from './tools/postgres-tools';
 import { startScheduleTool, stopScheduleTool } from './tools/schedule-tools';
 import { dailyOutlierAnalysisWorkflow } from './workflows/daily-outlier-analysis-workflow';
+import {
+  answerSimilarityJudgeScorer,
+  answerStructureScorer,
+  requiredToolsScorer,
+  sqlReadonlyObservableScorer,
+} from './scorers/index.js';
 
 export const mastra = new Mastra({
   bundler: {
@@ -35,12 +40,15 @@ export const mastra = new Mastra({
   },
   agents: { agent, dataEngineerAgent, outlierAnalysisAgent },
   workflows: { dailyOutlierAnalysisWorkflow },
+  scorers: {
+    'required-tools': requiredToolsScorer,
+    'sql-readonly-observable': sqlReadonlyObservableScorer,
+    'answer-structure': answerStructureScorer,
+    'answer-similarity-judge': answerSimilarityJudgeScorer,
+  },
   tools: {
     startScheduleTool,
     stopScheduleTool,
-    runSqlTool,
-    listTablesTool,
-    describeColumnsTool,
     omSearchGlossaryTool,
     omGetGlossaryTermTool,
     omSearchMetricsTool,

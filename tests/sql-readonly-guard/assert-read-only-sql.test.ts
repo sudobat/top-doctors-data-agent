@@ -1,15 +1,16 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { assertReadOnlySql } from '../../src/mastra/tools/postgres-tools.js';
+import { assertReadOnlySql } from '../../src/mastra/tools/sql-readonly.js';
 
 describe('assertReadOnlySql', () => {
   it('allows SELECT / WITH / TABLE / VALUES / EXPLAIN', () => {
     assert.equal(assertReadOnlySql('SELECT 1'), 'SELECT 1');
     assert.equal(assertReadOnlySql('WITH x AS (SELECT 1) SELECT * FROM x'), 'WITH x AS (SELECT 1) SELECT * FROM x');
-    assert.equal(assertReadOnlySql('TABLE gold_visits_mart'), 'TABLE gold_visits_mart');
+    assert.equal(assertReadOnlySql('TABLE silver_doctors'), 'TABLE silver_doctors');
     assert.equal(assertReadOnlySql('VALUES (1), (2)'), 'VALUES (1), (2)');
     assert.equal(assertReadOnlySql('EXPLAIN SELECT 1'), 'EXPLAIN SELECT 1');
     assert.equal(assertReadOnlySql('EXPLAIN ANALYZE SELECT 1'), 'EXPLAIN ANALYZE SELECT 1');
+    assert.equal(assertReadOnlySql('EXPLAIN VERBOSE SELECT 1'), 'EXPLAIN VERBOSE SELECT 1');
   });
 
   it('strips a trailing semicolon', () => {
@@ -25,7 +26,7 @@ describe('assertReadOnlySql', () => {
   });
 
   it('rejects write and DDL keywords', () => {
-    assert.throws(() => assertReadOnlySql('DELETE FROM gold_visits_mart'), /Only read-only SQL is allowed/);
+    assert.throws(() => assertReadOnlySql('DELETE FROM silver_doctors'), /Write or DDL SQL is not allowed/);
     assert.throws(() => assertReadOnlySql('SELECT 1; DROP TABLE t'), /Only a single SQL statement is allowed/);
     assert.throws(() => assertReadOnlySql('WITH x AS (SELECT 1) INSERT INTO t SELECT * FROM x'), /Write or DDL SQL is not allowed/);
     assert.throws(() => assertReadOnlySql('SELECT 1; SET search_path = public'), /Only a single SQL statement/);

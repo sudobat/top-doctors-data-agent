@@ -1,10 +1,24 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { dataEngineerAgent } from '../../src/mastra/agents/data-engineer-agent.js';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
 describe('dataEngineerAgent', () => {
   it('has the expected id', () => {
     assert.equal(dataEngineerAgent.id, 'data-engineer-agent');
+  });
+
+  it('uses BigQuery warehouse tools only for SQL (no Postgres warehouse tools)', async () => {
+    const keys = Object.keys(await dataEngineerAgent.listTools());
+    for (const id of ['run_sql', 'list_tables', 'describe_columns']) {
+      assert.ok(!keys.includes(id), `unexpected Postgres warehouse tool ${id}`);
+    }
+    const mastraEntry = readFileSync(join(root, 'src/mastra/index.ts'), 'utf8');
+    assert.doesNotMatch(mastraEntry, /postgres-tools/);
   });
 
   it('binds OpenMetadata and BigQuery tools, not Postgres tools', async () => {

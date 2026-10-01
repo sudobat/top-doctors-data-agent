@@ -2,7 +2,7 @@
 name: SQL Read-Only Guard
 description: Shared validation that allows only single-statement read-only SQL for warehouse tools
 targets:
-  - ../src/mastra/tools/postgres-tools.ts
+  - ../src/mastra/tools/bigquery-tools.ts
 ---
 
 # SQL Read-Only Guard
@@ -11,7 +11,7 @@ targets:
 function assertReadOnlySql(sql: string): string
 ```
 
-Used by Postgres `run_sql` and BigQuery `bq_run_sql` before execution.
+Used by BigQuery `bq_run_sql` before execution. Postgres `run_sql` is removed with clinic Postgres warehouse tools.
 
 ## Allowed statements
 

@@ -1,0 +1,84 @@
+{
+  "name": "data-engineer-agent-v1",
+  "description": "Starter eval cases for data-engineer-agent",
+  "agentId": "data-engineer-agent",
+  "inputSchema": { "type": "string" },
+  "groundTruthSchema": { "type": "object" },
+  "items": [
+    {
+      "externalId": "de-glossary-then-sql-01",
+      "input": "What does the revenue-by-specialty metric mean, and show latest paid totals?",
+      "groundTruth": {
+        "answerSummary": "Defines the OM metric then returns paid totals from gold_revenue_by_specialty",
+        "requiredTools": ["om_search_metrics", "bq_run_sql"],
+        "expectedStructure": ["definition", "sql", "results"],
+        "sqlConstraints": { "readonly": true, "certifiedOnly": true },
+        "notes": "Prefer EN glossary/metric when ES/IT disagree"
+      }
+    },
+    {
+      "externalId": "de-list-medallion-tables-02",
+      "input": "List the medallion tables and summarize what each layer contains.",
+      "groundTruth": {
+        "answerSummary": "Lists clinic tables by medallion prefix and briefly describes each layer",
+        "requiredTools": ["bq_list_tables"],
+        "expectedStructure": ["layers", "tables"],
+        "notes": "Warehouse layout context only; no non-certified business SQL required"
+      }
+    },
+    {
+      "externalId": "de-compare-bronze-executions-03",
+      "input": "Compare bronze_doctors across the last two executions.",
+      "groundTruth": {
+        "answerSummary": "Compares row counts or key diffs between the two latest bronze_doctors execution batches",
+        "requiredTools": ["bq_describe_columns", "bq_run_sql"],
+        "expectedStructure": ["sql", "results"],
+        "sqlConstraints": { "readonly": true },
+        "notes": "Pipeline/ops investigation may touch bronze_; not a certified business answer"
+      }
+    },
+    {
+      "externalId": "de-gold-revenue-paid-outstanding-04",
+      "input": "Query gold_revenue_by_specialty for paid vs outstanding amounts by specialty.",
+      "groundTruth": {
+        "answerSummary": "Returns paid and outstanding amounts from gold_revenue_by_specialty with SQL and results",
+        "requiredTools": ["om_search_metrics", "bq_run_sql"],
+        "expectedStructure": ["definition", "sql", "results"],
+        "sqlConstraints": { "readonly": true, "certifiedOnly": true },
+        "notes": "Cite OM metric before querying certified gold_"
+      }
+    },
+    {
+      "externalId": "de-cardiology-neurology-check-05",
+      "input": "Cardiology looks high and Neurology looks low in gold revenue — define the metric then check ops and bronze vs silver.",
+      "groundTruth": {
+        "answerSummary": "Defines revenue metric via OM then investigates specialty outliers across ops/bronze/silver with certified gold as the business surface",
+        "requiredTools": ["om_search_metrics", "bq_run_sql"],
+        "expectedStructure": ["definition", "sql", "results"],
+        "sqlConstraints": { "readonly": true, "certifiedOnly": true },
+        "notes": "Business answer from silver_/gold_; bronze/ops only for root-cause tracing"
+      }
+    },
+    {
+      "externalId": "de-glossary-appointment-06",
+      "input": "Define the glossary term for appointment completion, then show recent completed visit counts from gold.",
+      "groundTruth": {
+        "answerSummary": "Looks up the OM glossary definition then queries a certified gold visit mart for completed counts",
+        "requiredTools": ["om_search_glossary", "bq_run_sql"],
+        "expectedStructure": ["definition", "sql", "results"],
+        "sqlConstraints": { "readonly": true, "certifiedOnly": true },
+        "notes": "Prefer EN glossary when translations disagree"
+      }
+    },
+    {
+      "externalId": "de-certified-assets-doctor-workload-07",
+      "input": "What certified assets describe doctor workload, and what does the gold_doctor_workload metric mean?",
+      "groundTruth": {
+        "answerSummary": "Lists certified assets related to doctor workload and cites the OM metric definition",
+        "requiredTools": ["om_list_certified_assets", "om_search_metrics"],
+        "expectedStructure": ["definition", "assets"],
+        "notes": "Catalog-first question; SQL optional"
+      }
+    }
+  ]
+}

@@ -37,25 +37,16 @@ The database emulates a medallion warehouse in the `public` schema via table pre
 | `gold_*` | Analytics marts + wide reporting tables |
 | `ops_*` | Airbyte / Airflow / dbt run state |
 
-```shell
-npm run db:up
-```
+## BigQuery clinic warehouse
 
-To wipe and reload the medallion schema and seed:
+Synthetic clinic data is seeded **directly in BigQuery** (SQL `GENERATE_ARRAY` / CTAS). There is no local clinic Postgres warehouse.
 
 ```shell
-npm run db:seed
+npm run db:seed:bq
+npm run db:seed:bq:broken
 ```
 
-To reload with intentional pipeline-error scenarios (duplicate Cardiology loads + missing Neurology after a failed silver transform), for diagnosis practice:
-
-```shell
-npm run db:seed:broken
-```
-
-Restore the healthy snapshot anytime with `npm run db:seed`.
-
-Connection defaults: `postgres://clinic:clinic@localhost:5434/clinic` (host port **5434** so it does not clash with a local Postgres on 5432/5433).
+Optional `SEED_SCALE` (default `1.0`) multiplies entity volumes. Requires `GCP_PROJECT_ID`, `GOOGLE_APPLICATION_CREDENTIALS`, and a service account that can create datasets, replace tables, and run jobs (`roles/bigquery.dataEditor` plus `roles/bigquery.jobUser`). Set `BIGQUERY_DATASET` and `BIGQUERY_LOCATION` when they differ from `clinic` and `EU`.
 
 ## Semantic layer (OpenMetadata + Metabase)
 
@@ -70,17 +61,6 @@ npm run semantic:down
 ```
 
 Requires roughly 8GB free RAM. Copy GCP credentials to `secrets/gcp-sa.json` (or set `GOOGLE_APPLICATION_CREDENTIALS`) before configuring BigQuery ingest in OpenMetadata.
-
-## BigQuery clinic warehouse
-
-The data agents query BigQuery dataset `clinic` (location `EU`). `npm run db:seed:bq` reloads the local Postgres snapshot, then copies every `public` table into that dataset: same table names, column types, nullability, and primary keys. Postgres checks and foreign keys are not enforced in BigQuery.
-
-```shell
-npm run db:seed:bq
-npm run db:seed:bq:broken
-```
-
-Requires `GCP_PROJECT_ID`, `GOOGLE_APPLICATION_CREDENTIALS`, and a service account that can create datasets, replace tables, and load data (`roles/bigquery.dataEditor` plus `roles/bigquery.jobUser`). Set `BIGQUERY_DATASET` and `BIGQUERY_LOCATION` when they differ from `clinic` and `EU`.
 
 Set your `OPENAI_API_KEY` in `.env` or in your environment, then run:
 

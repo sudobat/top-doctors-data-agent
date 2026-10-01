@@ -9,15 +9,16 @@
     "build": "mastra build",
     "start": "mastra start",
     "test": "OPENAI_API_KEY=${OPENAI_API_KEY:-test-key-for-unit-tests} tsx --test $(find tests -name '*.test.ts' | sort)",
-    "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
-    "db:seed": "node scripts/seed-db.mjs",
-    "db:seed:broken": "node scripts/seed-db.mjs --broken",
     "db:seed:bq": "node --env-file=.env scripts/seed-bigquery.mjs",
     "db:seed:bq:broken": "node --env-file=.env scripts/seed-bigquery.mjs --broken",
     "semantic:up": "docker compose --profile semantic up -d",
     "semantic:down": "docker compose --profile semantic down",
-    "semantic:sync-metabase": "node --env-file=.env scripts/sync-metabase-descriptions.mjs"
+    "semantic:sync-metabase": "node --env-file=.env scripts/sync-metabase-descriptions.mjs",
+    "eval:load": "node --env-file=.env scripts/eval-load-datasets.mjs",
+    "eval:run": "node --env-file=.env scripts/eval-run-experiment.mjs",
+    "eval:run:data-engineer": "node --env-file=.env scripts/eval-run-experiment.mjs --agent=data-engineer-agent --variant=baseline",
+    "eval:run:outlier-analysis": "node --env-file=.env scripts/eval-run-experiment.mjs --agent=outlier-analysis-agent --variant=baseline"
   },
   "keywords": [],
   "author": "",
@@ -33,12 +34,10 @@
     "@mastra/libsql": "1.23.0",
     "@mastra/memory": "1.30.0",
     "@mastra/observability": "1.17.8",
-    "pg": "^8.23.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "latest",
-    "@types/pg": "^8.23.1",
     "mastra": "1.30.0",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3"

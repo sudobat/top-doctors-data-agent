@@ -1,7 +1,7 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { clinicDatasetId, describeColumns, listDatasets, listTables, queryBigQuery } from '../db/bigquery';
-import { assertReadOnlySql } from './postgres-tools';
+import { assertReadOnlySql } from './sql-readonly';
 
 export const bqListDatasetsTool = createTool({
   id: 'bq_list_datasets',

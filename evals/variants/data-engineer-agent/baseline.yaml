@@ -1,0 +1,7 @@
+id: baseline
+agentId: data-engineer-agent
+scorers:
+  - required-tools
+  - sql-readonly-observable
+  - answer-structure
+  - answer-similarity-judge

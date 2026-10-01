@@ -1,30 +1,36 @@
 ---
-name: Postgres Warehouse Tools
-description: Read-only clinic Postgres pool and Mastra tools for local medallion warehouse access
+name: Postgres Warehouse Tools (Removed)
+description: Clinic Postgres pool and Mastra tools removed; agents use BigQuery tools only
 targets:
-  - ../src/mastra/db/postgres.ts
-  - ../src/mastra/tools/postgres-tools.ts
+  - ../src/mastra/index.ts
+  - ../package.json
 ---
 
-# Postgres Warehouse Tools
+# Postgres Warehouse Tools (Removed)
 
-## Client
+Read-only clinic Postgres access via Mastra is **removed**. Warehouse SQL for data agents goes through BigQuery tools only (`bigquery-warehouse-tools.spec.md`).
 
-```ts
-function getPostgresPool(): pg.Pool
-function queryPostgres(sql: string, params?: unknown[]): Promise<{ rows; rowCount; fields }>
-```
+## Removed implementation files
 
-- `DATABASE_URL` is required; missing value throws `"DATABASE_URL is not set."`
-- Row serialization: `Date` → ISO string, `bigint` → string, `Buffer` → base64
+- `src/mastra/db/postgres.ts` must not exist
+  `[@test] ../tests/postgres-warehouse-tools/removed-artifacts.test.ts`
+- `src/mastra/tools/postgres-tools.ts` must not exist (including former `run_sql`, `list_tables`, `describe_columns`, and any re-export of `assertReadOnlySql`)
+  `[@test] ../tests/postgres-warehouse-tools/removed-artifacts.test.ts`
 
-## Tools (registered on Mastra; not bound to data agents)
+## Mastra registration
 
-| Tool id | Behavior |
-| --- | --- |
-| `run_sql` | Validates with `assertReadOnlySql`, then `queryPostgres` |
-| `list_tables` | Lists `public` base tables ordered by name |
-| `describe_columns` | Columns for `public.<tableName>`; missing table throws |
+- `src/mastra/index.ts` does not register Postgres warehouse tools
+  `[@test] ../tests/postgres-warehouse-tools/removed-from-mastra.test.ts`
+- `data-engineer-agent` and `outlier-analysis-agent` bind BigQuery tools only; Postgres tool ids are absent
+  `[@test] ../tests/agent-tool-bindings/data-engineer-agent.test.ts`
+  `[@test] ../tests/agent-tool-bindings/outlier-analysis-agent.test.ts`
 
-- `run_sql` rejects non-read-only SQL via the shared guard
+## Shared SQL read-only guard
+
+- `assertReadOnlySql` remains available for BigQuery `bq_run_sql` via a non-Postgres module (see `sql-readonly-guard.spec.md`)
   `[@test] ../tests/sql-readonly-guard/assert-read-only-sql.test.ts`
+
+## Environment
+
+- `DATABASE_URL` is not required for the data agent warehouse path
+  `[@test] ../tests/postgres-warehouse-tools/removed-from-mastra.test.ts`
