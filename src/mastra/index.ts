@@ -11,6 +11,7 @@ import {
 import { agent } from './agents/agent';
 import { dataEngineerAgent } from './agents/data-engineer-agent';
 import { outlierAnalysisAgent } from './agents/outlier-analysis-agent';
+import { helloWorldAgent } from './agents/hello-world-agent';
 import {
   bqDescribeColumnsTool,
   bqListDatasetsTool,
@@ -37,7 +38,7 @@ export const mastra = new Mastra({
   bundler: {
     externals: ['@duckdb/node-bindings'],
   },
-  agents: { agent, dataEngineerAgent, outlierAnalysisAgent },
+  agents: { agent, dataEngineerAgent, outlierAnalysisAgent, helloWorldAgent },
   workflows: { dailyOutlierAnalysisWorkflow },
   scorers: {
     'required-tools': requiredToolsScorer,
